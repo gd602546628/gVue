@@ -55,3 +55,40 @@ export function makeMap(
         ? val => map[val.toLowerCase()]
         : val => map[val]
 }
+
+export function cached(fn) {
+    const cache = Object.create(null)
+    return (function cachedFn(str) {
+        const hit = cache[str]
+        return hit || (cache[str] = fn(str))
+    })
+}
+
+export function no() {
+    return false
+}
+
+export function extend (to, _from){
+    for (const key in _from) {
+        to[key] = _from[key]
+    }
+    return to
+}
+
+const camelizeRE = /-(\w)/g
+export const camelize = cached((str) => {
+    return str.replace(camelizeRE, (_, c) => c ? c.toUpperCase() : '')
+})
+
+export const parseStyleText = cached(function (cssText) {
+    const res = {}
+    const listDelimiter = /;(?![^(]*\))/g
+    const propertyDelimiter = /:(.+)/
+    cssText.split(listDelimiter).forEach(function (item) {
+        if (item) {
+            const tmp = item.split(propertyDelimiter)
+            tmp.length > 1 && (res[tmp[0].trim()] = tmp[1].trim())
+        }
+    })
+    return res
+})

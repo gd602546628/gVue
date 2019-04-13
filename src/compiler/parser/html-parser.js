@@ -34,13 +34,38 @@ const conditionalComment = /^<!\[/
 // 是否是纯文本标签
 export const isPlainTextElement = makeMap('script,style,textarea', true)
 const reCache = {}
+const encodedAttr = /&(?:lt|gt|quot|amp);/g
+const encodedAttrWithNewLines = /&(?:lt|gt|quot|amp|#10|#9);/g
+const decodingMap = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&amp;': '&',
+    '&#10;': '\n',
+    '&#9;': '\t'
+}
+
+function decodeAttr(value, shouldDecodeNewlines) {
+    const re = shouldDecodeNewlines ? encodedAttrWithNewLines : encodedAttr
+    return value.replace(re, match => decodingMap[match])
+}
+
+const isUnaryTag = makeMap( // 自闭和标签
+    'area,base,br,col,embed,frame,hr,img,input,isindex,keygen,' +
+    'link,meta,param,source,track,wbr'
+);
+
+const canBeLeftOpenTag = makeMap( // 可以省略闭合标签
+    'colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr,source'
+);
+
 
 export function parseHtml(html, options) {
     let index = 0 // 当前处理字符的index
     let last //剩余的字符串
     let lastTag //最后一个标签
     let stack = []
-
+    const expectHTML = options.expectHTML || true
     while (html) {
         last = html
         if (!lastTag || !isPlainTextElement(lastTag)) { //非纯文本标签
@@ -174,7 +199,7 @@ export function parseHtml(html, options) {
 
             for (let i = stack.length - 1; i >= pos; i--) {
                 if (i > pos || !tagName) { // 栈中存在比pos大的元素
-                    console.warn('标签：' + stack[i].tag + '未闭合',`start:${stack[i].start}`,`end:${stack[i].end}`)
+                    console.warn('标签：' + stack[i].tag + '未闭合', `start:${stack[i].start}`, `end:${stack[i].end}`)
                 }
                 if (options.end) {
                     options.end(stack[i].tag, stack[i].start, stack[i].end)
@@ -201,53 +226,60 @@ export function parseHtml(html, options) {
         if (start) {
             let match = {
                 tagName: start[1],
-                attr: [],
+                attrs: [],
                 start: index
             }
             advance(start[0].length)
             let end, attr
             while (!(end = html.match(startTagClose)) && (attr = html.match(attribute))) {
-                attr.start = index
                 advance(attr[0].length)
-                attr.end = index
-                match.attr.push(attr)
+                match.attrs.push(attr)
             }
             if (end) {
+                console.log(end)
                 advance(end[0].length)
                 match.end = index
                 match.unarySlash = end[1] // 一元标签<br/>，这里有值，二元标签 <div></div>这里没值
                 return match
             }
-            if(start&&!end){
-                console.warn('非法标签：'+start[0]+'  会被编译器忽略')
+            if (start && !end) {
+                console.warn('非法标签：' + start[0] + '  会被编译器忽略')
             }
         }
     }
 
     function handleStartTag(match) {
-        let attrs = []
-        let tagName = match.tagName
-        const unary = !!match.unarySlash
+        const tagName = match.tagName
+        const unarySlash = match.unarySlash
 
-        match.attr.forEach(attr => {
-            attrs.push(
-                {
-                    name: attr[1],
-                    value: attr[3] || attr[4] || attr[5] || ''
-                }
-            )
-        })
+        if (expectHTML) {
+            if (lastTag === 'p' && isNonPhrasingTag(tagName)) {
+                parseEndTag(lastTag)
+            }
+            if (canBeLeftOpenTag(tagName) && lastTag === tagName) {
+                parseEndTag(tagName)
+            }
+        }
 
-        if (!unary) { //非一元标签
-            stack.push({
-                tag: tagName,
-                lowerCasedTag: tagName.toLowerCase(),
-                attrs: attrs,
-                start: match.start,
-                end: match.end
-            })
+        const unary = isUnaryTag(tagName) || !!unarySlash
+
+        const l = match.attrs.length
+        const attrs = new Array(l)
+        for (let i = 0; i < l; i++) {
+            const args = match.attrs[i]
+            const value = args[3] || args[4] || args[5] || ''
+            const shouldDecodeNewlines = tagName === 'a' && args[1] === 'href'
+            attrs[i] = {
+                name: args[1],
+                value: decodeAttr(value, shouldDecodeNewlines)
+            }
+        }
+
+        if (!unary) {
+            stack.push({tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: attrs})
             lastTag = tagName
         }
+
         if (options.start) {
             options.start(tagName, attrs, unary, match.start, match.end)
         }

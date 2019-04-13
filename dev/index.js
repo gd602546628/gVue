@@ -2,6 +2,8 @@ import GVue from '../src/index'
 import {observe} from "../src/observer";
 import {Watcher} from '../src/observer/watcher'
 import {parseHtml} from '../src/compiler/parser/html-parser'
+import {parse} from "../src/compiler/parser/parser";
+
 function observeTest() {
 
     let obj = {
@@ -31,13 +33,13 @@ function observeTest() {
 //observeTest()
 
 function parseHtmlTest() {
-  /*  let str = `<div v-for="item in a" style="width: 10px;height: 10px" :style="{width:10px}">
-<p>dsdds</p>
-<div>
-<img src="dsddsd"/>
-</div></div>
-<div>dsd</div>`*/
-let str=`<div></div><234`
+    /*  let str = `<div v-for="item in a" style="width: 10px;height: 10px" :style="{width:10px}">
+  <p>dsdds</p>
+  <div>
+  <img src="dsddsd"/>
+  </div></div>
+  <div>dsd</div>`*/
+    let str = `<div></div><234`
     console.log(str)
     parseHtml(str, {
 
@@ -48,10 +50,18 @@ let str=`<div></div><234`
             console.log('end', tagName, start, end)
         },
         chars: (text, start, end) => {
-          //  throw new Error()
+            //  throw new Error()
             console.log('chars', text, start, end)
         }
     })
 }
 
-parseHtmlTest()
+//parseHtmlTest()
+
+function parseTest() {
+    let dom = document.querySelector('#test')
+    let ast = parse(dom.outerHTML, {a: 123})
+    console.log(ast)
+}
+
+parseTest()
