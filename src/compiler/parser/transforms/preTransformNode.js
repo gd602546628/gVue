@@ -9,7 +9,7 @@ import {
     processElement,
     addIfCondition,
     createASTElement
-} from '../parser'
+} from '../index'
 
 export function preTransformNode (el, options) {
     if (el.tag === 'input') { //将带有v-model指令的input 标签处理成三个input,使用v-if v-else控制

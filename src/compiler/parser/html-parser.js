@@ -236,7 +236,6 @@ export function parseHtml(html, options) {
                 match.attrs.push(attr)
             }
             if (end) {
-                console.log(end)
                 advance(end[0].length)
                 match.end = index
                 match.unarySlash = end[1] // 一元标签<br/>，这里有值，二元标签 <div></div>这里没值

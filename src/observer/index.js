@@ -71,3 +71,9 @@ export function defineReactive(obj, key, shallow = false) {
         }
     })
 }
+
+export let shouldObserve= true
+
+export function toggleObserving (value) {
+    shouldObserve = value
+}
