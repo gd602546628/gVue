@@ -1,5 +1,5 @@
 import GVue from '../src/index'
-import {observe} from "../src/observer";
+import {observe, set, del} from "../src/observer";
 import {Watcher} from '../src/observer/watcher'
 import {parseHtml} from '../src/compiler/parser/html-parser'
 import {parse} from "../src/compiler/parser/index";
@@ -7,30 +7,92 @@ import compiler from '../src/compiler/index'
 import {installRenderHelpers} from '../src/instance/renderHelper'
 import {createElement} from '../src/vdom/create-element'
 
+
+function GVueTest(){
+    let gvue = new GVue({
+        el: '#test',
+        data() {
+            return {
+                list: [1, 2, 3],
+                map: {
+                    a: '11',
+                    b: '22',
+                },
+                c:true,
+                a: 'haha',
+                src: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=3339202615,3879308162&fm=26&gp=0.jpg'
+            }
+        },
+        components: {
+            testComponent: {
+                template: `<div>
+<p>{{props1}}</p>
+<button @click="click">dsds</button>
+</div>`,
+                props: {
+                    props1: {
+                        type: String,
+                        default: 'props1'
+                    }
+                },
+                data() {
+                    return {
+                        a: '2222'
+                    }
+                },
+                methods: {
+                    click() {
+                        this.$emit('emitTest')
+                    }
+                },
+                created(){
+                    console.log('子组件created')
+                }
+            }
+        },
+        computed: {
+            computedTest() {
+                return this.a + 'cccc'
+            }
+        },
+        created() {
+            console.log('created')
+        },
+        mounted() {
+            console.log('mounted')
+        },
+        methods: {
+            click(e) {
+                this.a = 'ddd'
+            },
+            emitTest(){
+                console.log('子组件事件触发')
+            }
+        }
+    })
+
+    console.log(gvue)
+}
+GVueTest()
+
 function observeTest() {
 
     let obj = {
         a: {
-            b: {
-                c: 333
-            }
-        }
+            item1: '111',
+            item2: '2222',
+        },
+        c: [1, 2]
     }
     observe(obj)
-    new Watcher(obj, 'a.b', (value, oldValue) => {
+    new Watcher(obj, 'c', (value, oldValue) => {
         console.log(value, oldValue)
     })
-    obj.a.b = {
-        d: '444'
-    }
 
-    /*  new Watcher(obj, function (ctx) {
-          let a = ctx.a.b.c
-          let b = ctx.a.b
-      }, (value, oldValue) => {
-          console.log(value, oldValue)
-      })
-      obj.a.b.c = '444444444444'*/
+    // obj.a.item2 = '4444'
+    //  set(obj.a, 'item3', '3333')
+    // obj.a.item3 = '555'
+    obj.c.push(3)
 }
 
 //observeTest()
@@ -67,38 +129,18 @@ function parseTest() {
     console.log(ast)
 }
 
+//parseTest()
+
 function compilerTest() {
     let dom = document.querySelector('#test')
     let render = compiler(dom.outerHTML, {})
-    let vm = {
-        list: [],
-        a: 11,
-        $options: {}
-    }
-    installRenderHelpers(vm)
-    vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
-    let renderFn = new Function(render.render)
-    console.log(vm)
     console.log(render)
-    console.log(renderFn)
-    vm.renderFn = renderFn
-    console.log(vm.renderFn())
+    console.log(render.render)
 }
 
-compilerTest()
+//compilerTest()
 
 
-function anonymous() {
-    return _c('div', {attrs: {"id": "test"}}, [_l((list), function (item) {
-        return _c('div', {key: "item"}, [_c('div', [_v(_s(item.name))])], 1)
-    }), _v(" "), _c('input', {
-        directives: [{name: "model", rawName: "v-model", value: (a), expression: "a"}],
-        domProps: {"value": (a)},
-        on: {
-            "input": function ($event) {
-                if ($event.target.composing) return;
-                a = $event.target.value
-            }
-        }
-    }), _v(" "), _c('img', {attrs: {"src": "sdadsd"}})], 2)
-}
+
+
+

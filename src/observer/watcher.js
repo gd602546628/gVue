@@ -1,6 +1,7 @@
 let id = 0
-import {parsePath} from '../util'
+import {parsePath,remove} from '../util'
 import {popTarget, pushTarget} from './dep'
+import {queueWatcher} from './scheduler'
 
 export class Watcher {
     id;
@@ -15,6 +16,16 @@ export class Watcher {
     cb;
 
     constructor(vm, expOrFn, cb, options, isRenderWatcher) {
+        if (options) {
+            this.deep = !!options.deep
+            this.user = !!options.user
+            this.lazy = !!options.lazy
+            this.sync = !!options.sync
+            this.before = options.before
+        } else {
+            this.deep = this.user = this.lazy = this.sync = false
+        }
+        this.dirty = this.lazy // 惰性求值使用
         this.id = id++
         this.vm = vm
         this.deps = []
@@ -23,13 +34,14 @@ export class Watcher {
         this.newDepIds = new Set()
         this.expression = expOrFn.toString()
         this.cb = cb
+
         if (typeof expOrFn === 'function') {
             this.getter = expOrFn
         } else {
             this.getter = parsePath(expOrFn)
         }
 
-        this.value = this.get()
+        this.value = this.lazy ? undefined : this.get()
     }
 
     get() {
@@ -80,15 +92,47 @@ export class Watcher {
     }
 
     update() {
-        this.run()
+        if (this.lazy) { //针对computed
+            this.dirty = true
+        } else if (this.sync) { //同步更新，直接run
+            this.run()
+        } else {
+            queueWatcher(this)
+        }
     }
 
     run() {
         let value = this.get()
         let oldValue = this.value
         this.value = value
-        if (oldValue !== value) {
-            this.cb.call(this.vm, value, oldValue)
+        this.cb.call(this.vm, value, oldValue)
+    }
+
+    evaluate () {
+        this.value = this.get()
+        this.dirty = false
+    }
+
+    depend () {
+        let i = this.deps.length
+        while (i--) {
+            this.deps[i].depend()
+        }
+    }
+
+    teardown () {
+        if (this.active) {
+            // remove self from vm's watcher list
+            // this is a somewhat expensive operation so we skip it
+            // if the vm is being destroyed.
+            if (!this.vm._isBeingDestroyed) {
+                remove(this.vm._watchers, this)
+            }
+            let i = this.deps.length
+            while (i--) {
+                this.deps[i].removeSub(this)
+            }
+            this.active = false
         }
     }
 

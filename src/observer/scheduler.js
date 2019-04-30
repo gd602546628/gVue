@@ -1,52 +1,24 @@
-/* @flow */
-
-
-//import {callHook, activateChildComponent} from '../instance/lifecycle'
-const callHook=()=>{}
-const config = {
-    async: true
-}
-import {
-    warn,
-    nextTick,
-    devtools
-} from '../util/index'
-
-export const MAX_UPDATE_COUNT = 100
-
-const queue = []
-const activatedChildren = []
 let has = {}
-let circular = {}
 let waiting = false
 let flushing = false
+let queue = []
 let index = 0
-
-/**
- * Reset the scheduler's state.
- */
+const activatedChildren = []
 function resetSchedulerState() {
     index = queue.length = activatedChildren.length = 0
     has = {}
-    circular = {}
     waiting = flushing = false
 }
 
-/**
- * Flush both queues and run the watchers.
- */
 function flushSchedulerQueue() {
     flushing = true
     let watcher, id
 
-    // Sort queue before flush.
-    // This ensures that:
-    // 1. Components are updated from parent to child. (because parent is always
-    //    created before the child)
-    // 2. A component's user watchers are run before its render watcher (because
-    //    user watchers are created before the render watcher)
-    // 3. If a component is destroyed during a parent component's watcher run,
-    //    its watchers can be skipped.
+
+    // 更新前 先对watcher排序
+    // 1 组件更新，先更新父组件，再更新子组件，父组件总是先创建，所以id比较小
+    // 2 用户创建的watcher先于 render watcher
+    // 3 子组件在父组件更新期间被销毁的，子组件的watcher将会被跳过
     queue.sort((a, b) => a.id - b.id)
 
     // do not cache length because more watchers might be pushed
@@ -59,21 +31,6 @@ function flushSchedulerQueue() {
         id = watcher.id
         has[id] = null
         watcher.run()
-        // in dev build, check and stop circular updates.
-        if (has[id] != null) {
-            circular[id] = (circular[id] || 0) + 1
-            if (circular[id] > MAX_UPDATE_COUNT) {
-                warn(
-                    'You may have an infinite update loop ' + (
-                        watcher.user
-                            ? `in watcher with expression "${watcher.expression}"`
-                            : `in a component render function.`
-                    ),
-                    watcher.vm
-                )
-                break
-            }
-        }
     }
 
     // keep copies of post queues before resetting state
@@ -83,48 +40,17 @@ function flushSchedulerQueue() {
     resetSchedulerState()
 
     // call component updated and activated hooks
-    callActivatedHooks(activatedQueue)
-    callUpdatedHooks(updatedQueue)
+    // callActivatedHooks(activatedQueue)
+    //   callUpdatedHooks(updatedQueue)
+
 
 }
 
-function callUpdatedHooks(queue) {
-    let i = queue.length
-    while (i--) {
-        const watcher = queue[i]
-        const vm = watcher.vm
-        if (vm._watcher === watcher && vm._isMounted && !vm._isDestroyed) {
-            callHook(vm, 'updated')
-        }
-    }
-}
 
-/**
- * Queue a kept-alive component that was activated during patch.
- * The queue will be processed after the entire tree has been patched.
- */
-export function queueActivatedComponent(vm) {
-    // setting _inactive to false here so that a render function can
-    // rely on checking whether it's in an inactive tree (e.g. router-view)
-    vm._inactive = false
-    activatedChildren.push(vm)
-}
-
-function callActivatedHooks(queue) {
-    for (let i = 0; i < queue.length; i++) {
-        queue[i]._inactive = true
-     //   activateChildComponent(queue[i], true /* true */)
-    }
-}
-
-/**
- * Push a watcher into the watcher queue.
- * Jobs with duplicate IDs will be skipped unless it's
- * pushed when the queue is being flushed.
- */
+// 异步watcher执行，每次触发依赖的set，都将watcher丢入队列，等调用栈完成后再一次执行watcher.run,
 export function queueWatcher(watcher) {
-    const id = watcher.id
-    if (has[id] == null) {
+    let id = watcher.id
+    if (!has[id]) {
         has[id] = true
         if (!flushing) {
             queue.push(watcher)
@@ -140,12 +66,43 @@ export function queueWatcher(watcher) {
         // queue the flush
         if (!waiting) {
             waiting = true
-
-            if (!config.async) {
-                flushSchedulerQueue()
-                return
-            }
             nextTick(flushSchedulerQueue)
         }
     }
+}
+
+
+// 调用nextTick,传入的cb都丢进一个数组，并将runCallBack，丢入macrotask (这里可以使用Promise,丢入最后执行的microtask)
+// 这样做能保证调用栈中所有nextTick执行完，再一次执行callback
+let pending = false
+let callbacks = []
+
+function runCallBack() {
+    pending = false
+    let copy = callbacks.slice(0)
+    callbacks.length = 0
+    copy.forEach(cb => {
+        cb()
+    })
+}
+
+export function nextTick(cb, ctx) {
+    callbacks.push(() => {
+        try {
+            cb.call(ctx)
+        } catch (e) {
+            console.error('$nextTick回调错误', e)
+        }
+    })
+    if (!pending) {
+        pending = true
+        setTimeout(runCallBack, 0)
+    }
+}
+
+export function queueActivatedComponent (vm) {
+    // setting _inactive to false here so that a render function can
+    // rely on checking whether it's in an inactive tree (e.g. router-view)
+    vm._inactive = false
+    activatedChildren.push(vm)
 }

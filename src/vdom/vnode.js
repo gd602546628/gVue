@@ -1,4 +1,4 @@
-/* @flow */
+
 
 export default class VNode {
 
@@ -37,8 +37,6 @@ export default class VNode {
     this.isAsyncPlaceholder = false
   }
 
-  // DEPRECATED: alias for componentInstance for backwards compat.
-  /* istanbul ignore next */
   get child (){
     return this.componentInstance
   }
