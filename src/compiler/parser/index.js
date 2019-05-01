@@ -1,5 +1,5 @@
 import he from 'he'
-import {cached, no, extend, camelize} from '../../util'
+import {cached, no, extend, camelize,warn} from '../../util'
 import {parseHtml} from './html-parser'
 import {getAndRemoveAttr, getBindingAttr, addAttr, addHandler, addProp, addDirective} from './helper'
 import {parseFilters} from './filter-parser'

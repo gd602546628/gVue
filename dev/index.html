@@ -5,16 +5,17 @@
     <title>Title</title>
 </head>
 <body>
-<div id="test">
-    <div v-for="item in list" key="item">
-        <div>{{item.name | aaa}}</div>
+<div id="test" @click="click()">
+    <div v-if="c">
+        <div  v-for="item,index in list" :key="item"  @click="click(item,index)">{{item}}</div>
     </div>
-    <div v-for="(item,key,value) in list" key="item">
-        <div>{{item.name}}</div>
+    <div v-else>
+        <div v-for="(item,key,value) in map" :key="item" @click="click(item)">{{item}}</div>
     </div>
     <input v-model="a"/>
-    <img src="sdadsd"/>
-    <p>{{item.name | aaa}}</p>
+    <img :src="src"/>
+    <p>{{computedTest}}</p>
+    <test-component props1="sdsds" @emitTest="emitTest"></test-component>
 </div>
 </body>
 </html>

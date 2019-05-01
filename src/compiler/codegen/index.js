@@ -69,7 +69,7 @@ export function genElement(el, state) {
         el.pre = el.pre || el.parent.pre
     }
 
-    if (el.staticRoot && !el.staticProcessed) { //服务端
+    if (el.staticRoot && !el.staticProcessed) { //处理静态树
         return genStatic(el, state)
     } else if (el.once && !el.onceProcessed) {
         return genOnce(el, state)
@@ -150,12 +150,12 @@ function genOnce(el, state) {
     }
 }
 
-export function genIf(el, state, altGen) {
+export function genIf(el, state, altGen,altEmpty) {
     el.ifProcessed = true // avoid recursion
     return genIfConditions(el.ifConditions.slice(), state, altGen, altEmpty)
 }
 
-function genIfConditions(conditions, state, altGen) {
+function genIfConditions(conditions, state, altGen,altEmpty) {
     if (!conditions.length) {
         return altEmpty || '_e()'
     }
@@ -200,10 +200,9 @@ export function genFor(el, state, altGen,altHelper) {
 
     el.forProcessed = true // avoid recursion
 
-    console.log(`function(${alias}${iterator1}${iterator2})`)
-    return `${altHelper || '_l'}((${exp}),` +
+    return `${ '_l'}((${exp}),` +
         `function(${alias}${iterator1}${iterator2}){` +
-        `return ${(altGen || genElement)(el, state)}` +
+        `return ${ genElement(el, state)}` +
         '})'
 }
 
