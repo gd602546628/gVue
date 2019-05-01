@@ -144,7 +144,7 @@ export function createPatchFunction(backend) {
         }
 
         vnode.isRootInsert = !nested // for transition enter check
-        if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
+        if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) { //如果是component vnode
             return
         }
 
@@ -200,7 +200,7 @@ export function createPatchFunction(backend) {
             // component also has set the placeholder vnode's elm.
             // in that case we can just return the element and be done.
             if (isDef(vnode.componentInstance)) {
-                console.log(parentElm,vnode.elm,refElm)
+                console.log(parentElm, vnode.elm, refElm)
                 initComponent(vnode, insertedVnodeQueue)
                 insert(parentElm, vnode.elm, refElm)
                 if (isTrue(isReactivated)) {
@@ -278,7 +278,7 @@ export function createPatchFunction(backend) {
 
     function isPatchable(vnode) {
         while (vnode.componentInstance) {
-            console.log('________________',vnode.componentInstance)
+            console.log('________________', vnode.componentInstance)
             vnode = vnode.componentInstance._vnode
         }
         return isDef(vnode.tag)
@@ -404,6 +404,23 @@ export function createPatchFunction(backend) {
             checkDuplicateKeys(newCh)
         }
 
+        /**
+         * children 核心diff算法
+         * 头头比较，
+         * 尾尾比较
+         * 头尾比较
+         * 尾头比较
+         *
+         * 命中上面其中一个则复用DOM，
+         *
+         * 都没命中，先看是否设置了key,设置了的话则查找old key-map中是否有新Node的key,如果有则复用dom,否则创建新dom，
+         *
+         * 没设置key，则直接创建dom
+         *
+         * 所以没设置key,diff算法之后根据那四种比较判断是否进行dom复用，如果设置了key，除了四种比较方式外还会在key-map中查找，所以设置了key可以更高效复用dom
+         *
+         *
+         * */
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
             if (isUndef(oldStartVnode)) {
                 oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
@@ -523,12 +540,12 @@ export function createPatchFunction(backend) {
             if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
         }
         if (isUndef(vnode.text)) {
-            if (isDef(oldCh) && isDef(ch)) {
+            if (isDef(oldCh) && isDef(ch)) {// 新旧vnode都有子节点，执行 updateChildren
                 if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
-            } else if (isDef(ch)) {
+            } else if (isDef(ch)) { // 新vnode有子节点,则添加子节点
                 if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '')
                 addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
-            } else if (isDef(oldCh)) {
+            } else if (isDef(oldCh)) { // 新vnode没有子节点，而旧vnode有子节点，则删除子节点
                 removeVnodes(elm, oldCh, 0, oldCh.length - 1)
             } else if (isDef(oldVnode.text)) {
                 nodeOps.setTextContent(elm, '')
@@ -680,7 +697,7 @@ export function createPatchFunction(backend) {
             createElm(vnode, insertedVnodeQueue)
         } else {
             const isRealElement = isDef(oldVnode.nodeType)
-            if (!isRealElement && sameVnode(oldVnode, vnode)) { //不是真实元素，且是新旧相同
+            if (!isRealElement && sameVnode(oldVnode, vnode)) { //不是DOM，且是相同vnode，值得比较
                 // patch existing root node
                 patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly)
             } else {
