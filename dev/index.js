@@ -8,7 +8,7 @@ import {installRenderHelpers} from '../src/instance/renderHelper'
 import {createElement} from '../src/vdom/create-element'
 
 
-function GVueTest(){
+function GVueTest() {
     let gvue = new GVue({
         el: '#test',
         data() {
@@ -18,7 +18,7 @@ function GVueTest(){
                     a: '11',
                     b: '22',
                 },
-                c:true,
+                c: true,
                 a: 'haha',
                 src: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=3339202615,3879308162&fm=26&gp=0.jpg'
             }
@@ -45,7 +45,7 @@ function GVueTest(){
                         this.$emit('emitTest')
                     }
                 },
-                created(){
+                created() {
                     console.log('子组件created')
                 }
             }
@@ -65,16 +65,35 @@ function GVueTest(){
             click(e) {
                 this.a = 'ddd'
             },
-            emitTest(){
+            emitTest() {
                 console.log('子组件事件触发')
             }
         }
     })
-
     console.log(gvue)
 }
-GVueTest()
-
+function GVueTest2(){
+    let gvie=new GVue({
+        el:'#test2',
+        data(){
+            return{
+                father:'father'
+            }
+        },
+        components:{
+            data(){
+                return{
+                    children:'children'
+                }
+            },
+            testComponent: {
+                template:`<div><slot name="slot1"></slot> <slot name="slot2"></slot><div>dsds</div></div>`
+            }
+        }
+    })
+}
+//GVueTest()
+GVueTest2()
 function observeTest() {
 
     let obj = {
@@ -139,6 +158,7 @@ function compilerTest() {
 }
 
 //compilerTest()
+
 
 
 

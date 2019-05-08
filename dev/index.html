@@ -17,5 +17,14 @@
     <p>{{computedTest}}</p>
     <test-component props1="sdsds" @emitTest="emitTest"></test-component>
 </div>
+
+<div id="test2">
+    <test-component>
+        <div slot="slot1">{{father}}</div>
+        <div slot="slot2"></div>
+    </test-component>
+</div>
 </body>
+
+
 </html>

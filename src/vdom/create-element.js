@@ -29,8 +29,10 @@ const config = {
 const SIMPLE_NORMALIZE = 1
 const ALWAYS_NORMALIZE = 2
 
-// wrapper function for providing a more flexible interface
-// without getting yelled at by flow
+/**
+ *  createElement阶段 ，创建vnode,对于component,会生成特殊vnode，添加componentInstance:VueComponent[vue子类],componentOptions:{Ctor, propsData, listeners, tag, children}
+ *
+ * */
 export function createElement(
     context,
     tag,
