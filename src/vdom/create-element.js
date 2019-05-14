@@ -101,7 +101,7 @@ export function _createElement(
             )
         } else if ((!data || !data.pre) && isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
             // component
-            vnode = createComponent(Ctor, data, context, children, tag)
+            vnode = createComponent(Ctor, data, context, children, tag) //创建组件vnode,该vnode添加了componentOptions    {Ctor, propsData, listeners, tag, children},
         } else {
             // unknown or unlisted namespaced elements
             // check at runtime because it may get assigned a namespace when its

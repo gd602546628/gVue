@@ -124,7 +124,7 @@ export function createComponent(
 
     // async component
     let asyncFactory
-    if (isUndef(Ctor.cid)) {
+    if (isUndef(Ctor.cid)) { //异步组件
         asyncFactory = Ctor
         Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context)
         if (Ctor === undefined) {
